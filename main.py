@@ -77,8 +77,8 @@ def teks_broker() -> str:
         "🏦 *DAFTAR BROKER VALETAX*\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "✅ *Regulasi*       : FSC Mauritius\n"
-        "✅ *Leverage*       : Hingga 1:2000\n"
-        "✅ *Deposit Min*    : \\$8\n"
+        "✅ *Leverage*       : Hingga 1:1000\n"
+        "✅ *Deposit Min*    : \\$10\n"
         "✅ *Spread*         : Mulai 0\\.1 pips\n"
         "✅ *Platform*       : MT4 / MT5\n"
         "✅ *Metode Deposit* : Bank Lokal / USDT\n\n"
@@ -86,7 +86,10 @@ def teks_broker() -> str:
     )
 
 def ambil_signal_manual() -> str:
-    """Ambil dan format signal terkini untuk ditampilkan manual."""
+    """
+    Ambil signal terkini untuk ditampilkan manual via tombol.
+    Bisa diakses kapan saja — tidak terikat jam trading.
+    """
     try:
         df       = ambil_data_twelvedata()
         sd       = deteksi_supply_demand(df)
@@ -97,16 +100,23 @@ def ambil_signal_manual() -> str:
         if signal:
             return format_pesan(signal, sd["harga"], ufo_list, waktu)
         else:
+            # Tampilkan info market meskipun tidak ada signal
+            supply_txt = f"`{sd['supply']['bottom']} - {sd['supply']['top']}`" if sd["supply"] else "_Tidak terdeteksi_"
+            demand_txt = f"`{sd['demand']['bottom']} - {sd['demand']['top']}`" if sd["demand"] else "_Tidak terdeteksi_"
             return (
-                f"📊 *SIGNAL XAUUSD*\n"
+                f"📊 *INFO MARKET XAUUSD*\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"⏰ Waktu : `{waktu}` WIB\n"
-                f"💰 Harga : `{sd['harga']}`\n\n"
-                f"💤 _Tidak ada setup valid saat ini\\._\n"
-                f"Harga belum menyentuh area Supply/Demand atau UFO\\."
+                f"⏰ *Waktu*          : `{waktu}` WIB\n"
+                f"💰 *Harga Sekarang* : `{sd['harga']}`\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"🔴 *Supply Zone* : {supply_txt}\n"
+                f"🟢 *Demand Zone* : {demand_txt}\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"💤 _Belum ada setup entry valid saat ini_\n"
+                f"_Harga belum menyentuh area Supply/Demand/UFO_"
             )
     except Exception as e:
-        return f"❌ Gagal ambil data: {e}"
+        return f"❌ Gagal ambil data: `{e}`"
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     nama = update.effective_user.first_name or "Trader"
@@ -282,7 +292,7 @@ def format_pesan(signal: dict, harga: float, ufo_list: list, waktu_wib: str) -> 
         f"📌 *Alasan Signal* :\n"
         f"   _{signal['alasan']}_\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"⚠️ _Gunakan manajemen risiko yang ketat!_"
+        f"⚠️ _Gunakan manajemen risiko yang ketat_"
     )
 
 
