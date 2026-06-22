@@ -77,8 +77,8 @@ def teks_broker() -> str:
         "🏦 *DAFTAR BROKER VALETAX*\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "✅ *Regulasi*       : FSC Mauritius\n"
-        "✅ *Leverage*       : Hingga 1:1000\n"
-        "✅ *Deposit Min*    : \\$10\n"
+        "✅ *Leverage*       : Hingga 1:2000\n"
+        "✅ *Deposit Min*    : \\$8\n"
         "✅ *Spread*         : Mulai 0\\.1 pips\n"
         "✅ *Platform*       : MT4 / MT5\n"
         "✅ *Metode Deposit* : Bank Lokal / USDT\n\n"
@@ -282,7 +282,7 @@ def format_pesan(signal: dict, harga: float, ufo_list: list, waktu_wib: str) -> 
         f"📌 *Alasan Signal* :\n"
         f"   _{signal['alasan']}_\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"⚠️ _Gunakan manajemen risiko yang ketat_"
+        f"⚠️ _Gunakan manajemen risiko yang ketat!_"
     )
 
 
