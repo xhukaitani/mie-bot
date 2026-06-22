@@ -33,7 +33,7 @@ VALETAX_URL    = "https://ma.valetax.com/p/6826903"
 SYMBOL         = "XAU/USD"
 INTERVAL       = "15min"
 CANDLE_SEC     = 15 * 60
-JAM_MULAI      = 7
+JAM_MULAI      = 6
 JAM_SELESAI    = 24
 TIMEZONE       = pytz.timezone("Asia/Jakarta")
 
