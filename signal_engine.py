@@ -221,7 +221,6 @@ def format_pesan(signal: dict, harga: float, ufo_list: list, waktu_wib: str) -> 
         f"📊 SIGNAL MARKET       : XAUUSD\n"
         f"⏰ Waktu Analisis      : {waktu_wib} WIB\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"💰 Harga Sekarang      : {harga}\n"
         f"💰 Harga Entry (15M)   : {signal['entry']}\n"
         f"📈 Rekomendasi         : {emoji}\n"
         f"🛑 Stop Loss           : {signal['sl']}\n"
