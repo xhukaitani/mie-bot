@@ -3,7 +3,8 @@
 Signal Engine XAUUSD — Supply & Demand + UFO Otomatis
 Sumber data : Twelve Data API (realtime, sesuai TradingView)
 Tujuan      : Grup Telegram topik tertentu
-Jam aktif   : 07:00 - 00:00 WIB
+Update      : Setiap 5 menit
+Jam aktif   : 06:00 - 02:00 WIB
 """
 
 import time
@@ -22,9 +23,9 @@ TOPIC_ID       = 4
 TWELVE_API_KEY = "dbb5e1da912149f4ba5d518591d6ac47"
 SYMBOL         = "XAU/USD"
 INTERVAL       = "15min"
-CANDLE_SEC     = 15 * 60
-JAM_MULAI      = 7    # 07:00 WIB
-JAM_SELESAI    = 24   # 00:00 WIB (tengah malam)
+INTERVAL_CEK   = 5 * 60        # cek setiap 5 menit
+JAM_MULAI      = 6             # 06:00 WIB
+JAM_SELESAI    = 2             # 02:00 WIB (dini hari)
 TIMEZONE       = pytz.timezone("Asia/Jakarta")
 
 logging.basicConfig(
@@ -35,7 +36,20 @@ log = logging.getLogger(__name__)
 
 
 # ══════════════════════════════════════════
-#  AMBIL DATA DARI TWELVE DATA (REALTIME)
+#  CEK JAM AKTIF
+# ══════════════════════════════════════════
+
+def jam_aktif() -> bool:
+    """
+    Aktif dari jam 06:00 sampai 02:00 WIB (melewati tengah malam).
+    """
+    jam = datetime.now(TIMEZONE).hour
+    # Aktif: jam 6 pagi s/d jam 1 malam (jam 0 dan 1 masih aktif)
+    return jam >= JAM_MULAI or jam < JAM_SELESAI
+
+
+# ══════════════════════════════════════════
+#  AMBIL DATA DARI TWELVE DATA
 # ══════════════════════════════════════════
 
 def ambil_data() -> pd.DataFrame:
@@ -100,16 +114,8 @@ def deteksi_supply_demand(df: pd.DataFrame) -> dict:
             })
 
     harga_kini = float(df["Close"].iloc[-1])
-
-    supply = sorted(
-        [z for z in supply_zones if z["bottom"] > harga_kini],
-        key=lambda z: z["bottom"]
-    )
-    demand = sorted(
-        [z for z in demand_zones if z["top"] < harga_kini],
-        key=lambda z: z["top"],
-        reverse=True,
-    )
+    supply = sorted([z for z in supply_zones if z["bottom"] > harga_kini], key=lambda z: z["bottom"])
+    demand = sorted([z for z in demand_zones if z["top"] < harga_kini], key=lambda z: z["top"], reverse=True)
 
     return {
         "harga" : round(harga_kini, 2),
@@ -154,8 +160,7 @@ def deteksi_ufo(df: pd.DataFrame) -> list:
                     "zona" : f"{level} - {round(candle['High'],2)}",
                 })
 
-    ufo_list = sorted(ufo_list, key=lambda u: abs(u["level"] - harga_kini))
-    return ufo_list[:3]
+    return sorted(ufo_list, key=lambda u: abs(u["level"] - harga_kini))[:3]
 
 
 # ══════════════════════════════════════════
@@ -171,43 +176,44 @@ def tentukan_signal(sd: dict, ufo_list: list) -> dict | None:
     if supply and 0 <= supply["bottom"] - harga <= toleransi * 10:
         entry = round((supply["top"] + supply["bottom"]) / 2, 2)
         sl    = round(supply["top"] + 5, 2)
-        tp1   = round(harga - (sl - entry) * 1.5, 2)
-        tp2   = round(harga - (sl - entry) * 2.5, 2)
-        return {"arah": "SELL", "entry": entry, "sl": sl, "tp1": tp1, "tp2": tp2,
+        return {"arah": "SELL", "entry": entry, "sl": sl,
+                "tp1": round(harga - (sl - entry) * 1.5, 2),
+                "tp2": round(harga - (sl - entry) * 2.5, 2),
                 "alasan": f"Harga mendekati Supply Zone {supply['bottom']} - {supply['top']}"}
 
     for ufo in ufo_list:
         if ufo["tipe"] == "BEARISH" and 0 <= ufo["level"] - harga <= toleransi * 8:
-            sl  = round(ufo["level"] + 8, 2)
-            tp1 = round(harga - (sl - harga) * 1.5, 2)
-            tp2 = round(harga - (sl - harga) * 2.5, 2)
-            return {"arah": "SELL", "entry": harga, "sl": sl, "tp1": tp1, "tp2": tp2,
+            sl = round(ufo["level"] + 8, 2)
+            return {"arah": "SELL", "entry": harga, "sl": sl,
+                    "tp1": round(harga - (sl - harga) * 1.5, 2),
+                    "tp2": round(harga - (sl - harga) * 2.5, 2),
                     "alasan": f"UFO Bearish di zona {ufo['zona']}"}
 
     if demand and 0 <= harga - demand["top"] <= toleransi * 10:
         entry = round((demand["top"] + demand["bottom"]) / 2, 2)
         sl    = round(demand["bottom"] - 5, 2)
-        tp1   = round(harga + (entry - sl) * 1.5, 2)
-        tp2   = round(harga + (entry - sl) * 2.5, 2)
-        return {"arah": "BUY", "entry": entry, "sl": sl, "tp1": tp1, "tp2": tp2,
+        return {"arah": "BUY", "entry": entry, "sl": sl,
+                "tp1": round(harga + (entry - sl) * 1.5, 2),
+                "tp2": round(harga + (entry - sl) * 2.5, 2),
                 "alasan": f"Harga mendekati Demand Zone {demand['bottom']} - {demand['top']}"}
 
     for ufo in ufo_list:
         if ufo["tipe"] == "BULLISH" and 0 <= harga - ufo["level"] <= toleransi * 8:
-            sl  = round(ufo["level"] - 8, 2)
-            tp1 = round(harga + (harga - sl) * 1.5, 2)
-            tp2 = round(harga + (harga - sl) * 2.5, 2)
-            return {"arah": "BUY", "entry": harga, "sl": sl, "tp1": tp1, "tp2": tp2,
+            sl = round(ufo["level"] - 8, 2)
+            return {"arah": "BUY", "entry": harga, "sl": sl,
+                    "tp1": round(harga + (harga - sl) * 1.5, 2),
+                    "tp2": round(harga + (harga - sl) * 2.5, 2),
                     "alasan": f"UFO Bullish di zona {ufo['zona']}"}
 
     return None
 
 
 # ══════════════════════════════════════════
-#  FORMAT & KIRIM KE TELEGRAM TOPIK
+#  FORMAT PESAN
 # ══════════════════════════════════════════
 
-def format_pesan(signal: dict, harga: float, ufo_list: list, waktu_wib: str) -> str:
+def format_pesan_signal(signal: dict, harga: float, ufo_list: list) -> str:
+    waktu = datetime.now(TIMEZONE).strftime("%Y-%m-%d %H:%M")
     emoji = "✅ BUY" if signal["arah"] == "BUY" else "⭕ SELL"
 
     ufo_txt = ""
@@ -219,7 +225,7 @@ def format_pesan(signal: dict, harga: float, ufo_list: list, waktu_wib: str) -> 
 
     return (
         f"📊 SIGNAL MARKET       : XAUUSD\n"
-        f"⏰ Waktu Analisis      : {waktu_wib} WIB\n"
+        f"⏰ Waktu Analisis      : {waktu} WIB\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
         f"💰 Harga Entry (15M)   : {signal['entry']}\n"
         f"📈 Rekomendasi         : {emoji}\n"
@@ -231,9 +237,32 @@ def format_pesan(signal: dict, harga: float, ufo_list: list, waktu_wib: str) -> 
         f"📌 Alasan Signal :\n"
         f"   {signal['alasan']}\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"⚠️ Gunakan manajemen risiko yang ketat"
+        f"⚠️ Gunakan manajemen risiko yang ketat!"
     )
 
+
+def format_pesan_sama(signal: dict, harga: float) -> str:
+    waktu = datetime.now(TIMEZONE).strftime("%Y-%m-%d %H:%M")
+    emoji = "✅ BUY" if signal["arah"] == "BUY" else "⭕ SELL"
+
+    return (
+        f"🔁 KONFIRMASI SIGNAL   : XAUUSD\n"
+        f"⏰ Update              : {waktu} WIB\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"📈 Rekomendasi         : {emoji}\n"
+        f"💰 Entry               : {signal['entry']}\n"
+        f"🛑 Stop Loss           : {signal['sl']}\n"
+        f"🎯 Take Profit 1       : {signal['tp1']}\n"
+        f"🎯 Take Profit 2       : {signal['tp2']}\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"📌 Signal masih berlaku — tidak ada perubahan setup.\n"
+        f"   Tetap ikuti rencana trading sebelumnya."
+    )
+
+
+# ══════════════════════════════════════════
+#  KIRIM KE TELEGRAM
+# ══════════════════════════════════════════
 
 def kirim_telegram(pesan: str) -> bool:
     url  = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -257,35 +286,28 @@ def kirim_telegram(pesan: str) -> bool:
 #  LOOP UTAMA
 # ══════════════════════════════════════════
 
-def detik_ke_candle_berikutnya() -> int:
-    return CANDLE_SEC - (int(time.time()) % CANDLE_SEC)
-
-
 def main():
     log.info("🚀 Mie_Bot Signal Engine aktif!")
     log.info(f"   Sumber data : Twelve Data API (realtime)")
     log.info(f"   Simbol      : {SYMBOL}")
     log.info(f"   Grup ID     : {CHAT_ID}")
     log.info(f"   Topik ID    : {TOPIC_ID}")
-    log.info(f"   Jam aktif   : {JAM_MULAI:02d}:00 - 00:00 WIB")
+    log.info(f"   Update      : Setiap 5 menit")
+    log.info(f"   Jam aktif   : 06:00 - 02:00 WIB")
 
-    signal_terakhir = None
+    signal_terakhir = None  # simpan signal terakhir untuk perbandingan
 
     while True:
-        tunggu = detik_ke_candle_berikutnya()
-        log.info(f"⏳ Candle berikutnya close dalam {tunggu} detik...")
-        time.sleep(tunggu + 2)
-
-        # ── CEK JAM TRADING (07:00 - 00:00 WIB) ──
         sekarang_wib = datetime.now(TIMEZONE)
-        jam_sekarang = sekarang_wib.hour
-        waktu_str    = sekarang_wib.strftime("%Y-%m-%d %H:%M")
+        waktu_str    = sekarang_wib.strftime("%H:%M")
 
-        if not (JAM_MULAI <= jam_sekarang < JAM_SELESAI):
-            log.info(f"😴 Di luar jam trading ({sekarang_wib.strftime('%H:%M')} WIB). Bot istirahat.")
+        # ── CEK JAM AKTIF ──
+        if not jam_aktif():
+            log.info(f"😴 Di luar jam aktif ({waktu_str} WIB). Bot istirahat.")
+            time.sleep(INTERVAL_CEK)
             continue
 
-        log.info(f"✅ Jam trading aktif — {sekarang_wib.strftime('%H:%M')} WIB")
+        log.info(f"🔍 Mulai analisa — {waktu_str} WIB")
 
         try:
             df       = ambil_data()
@@ -299,20 +321,29 @@ def main():
 
             if signal:
                 kunci = f"{signal['arah']}-{signal['entry']}"
+
                 if kunci != signal_terakhir:
-                    pesan = format_pesan(signal, sd["harga"], ufo_list, waktu_str)
+                    # ── SIGNAL BARU ──
+                    pesan = format_pesan_signal(signal, sd["harga"], ufo_list)
                     if kirim_telegram(pesan):
-                        log.info(f"✅ Signal {signal['arah']} berhasil dikirim ke topik {TOPIC_ID}")
+                        log.info(f"✅ Signal BARU {signal['arah']} dikirim!")
                         signal_terakhir = kunci
+
                 else:
-                    log.info("ℹ️  Signal sama, tidak dikirim ulang.")
+                    # ── SIGNAL SAMA — tetap kirim konfirmasi ──
+                    pesan = format_pesan_sama(signal, sd["harga"])
+                    if kirim_telegram(pesan):
+                        log.info(f"🔁 Konfirmasi signal {signal['arah']} dikirim (sama seperti sebelumnya).")
+
             else:
                 log.info("💤 Tidak ada signal valid saat ini.")
+                signal_terakhir = None  # reset jika tidak ada signal
 
         except Exception as e:
             log.error(f"❌ Error: {e}")
 
-        time.sleep(5)
+        log.info(f"⏳ Menunggu 5 menit untuk analisa berikutnya...\n")
+        time.sleep(INTERVAL_CEK)
 
 
 if __name__ == "__main__":
