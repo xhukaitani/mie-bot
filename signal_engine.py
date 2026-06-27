@@ -4,7 +4,8 @@ Signal Engine XAUUSD — Supply & Demand + UFO Otomatis
 Sumber data : Twelve Data API (realtime, sesuai TradingView)
 Tujuan      : Grup Telegram topik tertentu
 Update      : Setiap 5 menit
-Jam aktif   : 06:00 - 02:00 WIB
+Jam aktif   : 06:00 - 02:00 WIB (Senin - Jumat)
+OFF         : Sabtu & Minggu
 """
 
 import time
@@ -28,6 +29,8 @@ JAM_MULAI      = 6             # 06:00 WIB
 JAM_SELESAI    = 2             # 02:00 WIB (dini hari)
 TIMEZONE       = pytz.timezone("Asia/Jakarta")
 
+HARI_NAMA = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
+
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(message)s",
     level=logging.INFO,
@@ -42,9 +45,17 @@ log = logging.getLogger(__name__)
 def jam_aktif() -> bool:
     """
     Aktif dari jam 06:00 sampai 02:00 WIB (melewati tengah malam).
+    OFF penuh pada hari Sabtu (5) dan Minggu (6).
     """
-    jam = datetime.now(TIMEZONE).hour
-    # Aktif: jam 6 pagi s/d jam 1 malam (jam 0 dan 1 masih aktif)
+    sekarang = datetime.now(TIMEZONE)
+    hari     = sekarang.weekday()  # 0=Senin, 1=Selasa, ..., 5=Sabtu, 6=Minggu
+    jam      = sekarang.hour
+
+    # ── Sabtu & Minggu → selalu OFF ──
+    if hari >= 5:
+        return False
+
+    # ── Senin–Jumat → cek rentang jam aktif ──
     return jam >= JAM_MULAI or jam < JAM_SELESAI
 
 
@@ -227,6 +238,7 @@ def format_pesan_signal(signal: dict, harga: float, ufo_list: list) -> str:
         f"📊 SIGNAL MARKET       : XAUUSD\n"
         f"⏰ Waktu Analisis      : {waktu} WIB\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"💰 Harga Sekarang      : {harga}\n"
         f"💰 Harga Entry (15M)   : {signal['entry']}\n"
         f"📈 Rekomendasi         : {emoji}\n"
         f"🛑 Stop Loss           : {signal['sl']}\n"
@@ -249,6 +261,7 @@ def format_pesan_sama(signal: dict, harga: float) -> str:
         f"🔁 KONFIRMASI SIGNAL   : XAUUSD\n"
         f"⏰ Update              : {waktu} WIB\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"💰 Harga Sekarang      : {harga}\n"
         f"📈 Rekomendasi         : {emoji}\n"
         f"💰 Entry               : {signal['entry']}\n"
         f"🛑 Stop Loss           : {signal['sl']}\n"
@@ -293,21 +306,23 @@ def main():
     log.info(f"   Grup ID     : {CHAT_ID}")
     log.info(f"   Topik ID    : {TOPIC_ID}")
     log.info(f"   Update      : Setiap 5 menit")
-    log.info(f"   Jam aktif   : 06:00 - 02:00 WIB")
+    log.info(f"   Jam aktif   : 06:00 - 02:00 WIB (Senin - Jumat)")
+    log.info(f"   OFF         : Sabtu & Minggu (seharian)")
 
     signal_terakhir = None  # simpan signal terakhir untuk perbandingan
 
     while True:
         sekarang_wib = datetime.now(TIMEZONE)
         waktu_str    = sekarang_wib.strftime("%H:%M")
+        hari_str     = HARI_NAMA[sekarang_wib.weekday()]
 
         # ── CEK JAM AKTIF ──
         if not jam_aktif():
-            log.info(f"😴 Di luar jam aktif ({waktu_str} WIB). Bot istirahat.")
+            log.info(f"😴 Di luar jam aktif — {hari_str} {waktu_str} WIB. Bot istirahat.")
             time.sleep(INTERVAL_CEK)
             continue
 
-        log.info(f"🔍 Mulai analisa — {waktu_str} WIB")
+        log.info(f"🔍 Mulai analisa — {hari_str} {waktu_str} WIB")
 
         try:
             df       = ambil_data()
