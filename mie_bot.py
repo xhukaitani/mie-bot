@@ -20,7 +20,15 @@ from telegram.ext import (
 # ─────────────────────────────────────────
 #  KONFIGURASI
 # ─────────────────────────────────────────
-BOT_TOKEN    = "8973783812:AAE4iXqQ-hWnVpzToGjn2oOcwomfcY_K5hA"
+import os
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+if not BOT_TOKEN:
+    raise SystemExit("BOT_TOKEN belum di-set. Jalankan: set environment variable BOT_TOKEN dulu.")
 VALETAX_URL  = "https://ma.valetax.com/p/6826903"
 
 # ─────────────────────────────────────────
