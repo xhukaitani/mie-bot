@@ -229,50 +229,51 @@ def tentukan_signal(sd: dict, ufo_list: list) -> dict | None:
 
 def format_pesan_signal(signal: dict, harga: float, ufo_list: list) -> str:
     waktu = datetime.now(TIMEZONE).strftime("%Y-%m-%d %H:%M")
-    emoji = "BUY" if signal["arah"] == "BUY" else "SELL"
+    emoji = "✅ BUY" if signal["arah"] == "BUY" else "⭕ SELL"
 
     ufo_txt = ""
-    for i, u in enumerate(ufo_list, 1):
-        ufo_txt += f"   UFO #{i} ({u['tipe']}) : {u['zona']}\n"
+   for i, u in enumerate(ufo_list, 1):
+        emo = "🔴" if u["tipe"] == "BEARISH" else "🟢"
+        ufo_txt += f"   {emo} UFO #{i} ({u['tipe']}) : {u['zona']}\n"
     if not ufo_txt:
         ufo_txt = "   Tidak ada UFO terdeteksi\n"
 
     return (
-        f"SIGNAL MARKET       : XAUUSD\n"
-        f"Waktu Analisis      : {waktu} WIB\n"
-        f"------------------------\n"
-        f"Harga Sekarang      : {harga}\n"
-        f"Harga Entry (15M)   : {signal['entry']}\n"
-        f"Rekomendasi         : {emoji}\n"
-        f"Stop Loss           : {signal['sl']}\n"
-        f"Take Profit 1       : {signal['tp1']}\n"
-        f"Take Profit 2       : {signal['tp2']}\n"
-        f"------------------------\n"
-        f"Area UFO Terdeteksi :\n{ufo_txt}"
-        f"Alasan Signal :\n"
+        f"📊 SIGNAL MARKET       : XAUUSD\n"
+        f"⏰ Waktu Analisis      : {waktu} WIB\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"💰 Harga Sekarang      : {harga}\n"
+        f"💰 Harga Entry (15M)   : {signal['entry']}\n"
+        f"📈 Rekomendasi         : {emoji}\n"
+        f"🛑 Stop Loss           : {signal['sl']}\n"
+        f"🎯 Take Profit 1       : {signal['tp1']}\n"
+        f"🎯 Take Profit 2       : {signal['tp2']}\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"🗺️ Area UFO Terdeteksi :\n{ufo_txt}"
+        f"📌 Alasan Signal :\n"
         f"   {signal['alasan']}\n"
-        f"------------------------\n"
-        f"Gunakan manajemen risiko yang ketat!"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"⚠️ Gunakan manajemen risiko yang ketat!"
     )
 
 
 def format_pesan_sama(signal: dict, harga: float) -> str:
     waktu = datetime.now(TIMEZONE).strftime("%Y-%m-%d %H:%M")
-    emoji = "BUY" if signal["arah"] == "BUY" else "SELL"
+    emoji = "✅ BUY" if signal["arah"] == "BUY" else "⭕ SELL"
 
     return (
-        f"KONFIRMASI SIGNAL   : XAUUSD\n"
-        f"Update              : {waktu} WIB\n"
-        f"------------------------\n"
-        f"Harga Sekarang      : {harga}\n"
-        f"Rekomendasi         : {emoji}\n"
-        f"Entry               : {signal['entry']}\n"
-        f"Stop Loss           : {signal['sl']}\n"
-        f"Take Profit 1       : {signal['tp1']}\n"
-        f"Take Profit 2       : {signal['tp2']}\n"
-        f"------------------------\n"
-        f"Signal masih berlaku - tidak ada perubahan setup.\n"
-        f"Tetap ikuti rencana trading sebelumnya."
+        f"🔁 KONFIRMASI SIGNAL   : XAUUSD\n"
+        f"⏰ Update              : {waktu} WIB\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"💰 Harga Sekarang      : {harga}\n"
+        f"📈 Rekomendasi         : {emoji}\n"
+        f"💰 Entry               : {signal['entry']}\n"
+        f"🛑 Stop Loss           : {signal['sl']}\n"
+        f"🎯 Take Profit 1       : {signal['tp1']}\n"
+        f"🎯 Take Profit 2       : {signal['tp2']}\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"📌 Signal masih berlaku — tidak ada perubahan setup.\n"
+        f"   Tetap ikuti rencana trading sebelumnya."
     )
 
 
