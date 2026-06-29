@@ -232,7 +232,7 @@ def format_pesan_signal(signal: dict, harga: float, ufo_list: list) -> str:
     emoji = "✅ BUY" if signal["arah"] == "BUY" else "⭕ SELL"
 
     ufo_txt = ""
-   for i, u in enumerate(ufo_list, 1):
+    for i, u in enumerate(ufo_list, 1):
         emo = "🔴" if u["tipe"] == "BEARISH" else "🟢"
         ufo_txt += f"   {emo} UFO #{i} ({u['tipe']}) : {u['zona']}\n"
     if not ufo_txt:
@@ -275,7 +275,6 @@ def format_pesan_sama(signal: dict, harga: float) -> str:
         f"📌 Signal masih berlaku — tidak ada perubahan setup.\n"
         f"   Tetap ikuti rencana trading sebelumnya."
     )
-
 
 # ==============================================================
 #  KIRIM KE TELEGRAM
